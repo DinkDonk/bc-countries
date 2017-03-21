@@ -1246,15 +1246,13 @@ var allCountries = [
   ]
 ];
 
-var libphonenumber = (typeof window !== "undefined" ? window['libphonenumber'] : typeof global !== "undefined" ? global['libphonenumber'] : null),
-    Trie           = (typeof window !== "undefined" ? window['DigitsTrie'] : typeof global !== "undefined" ? global['DigitsTrie'] : null);
+var PhoneNumber = (typeof window !== "undefined" ? window['PhoneNumber'] : typeof global !== "undefined" ? global['PhoneNumber'] : null),
+    DigitsTrie  = (typeof window !== "undefined" ? window['DigitsTrie'] : typeof global !== "undefined" ? global['DigitsTrie'] : null);
 
 // check if given number is valid
 function isValidNumberHelper(number, countryCode) {
   try {
-    var phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
-    var numberObj = phoneUtil.parseAndKeepRawInput(number, countryCode);
-    return phoneUtil.isValidNumber(numberObj);
+    return new PhoneNumber(number, countryCode).isValid();
   } catch (e) {
     return false;
   }
@@ -1265,7 +1263,8 @@ function formatNumberHelper(val, countryCode, addSuffix, allowExtension, isAllow
   try {
     var clean = val.replace(/\D/g, ""),
       // NOTE: we use AsYouTypeFormatter because the default format function can't handle incomplete numbers e.g. "+17024" formats to "+1 7024" as opposed to "+1 702-4"
-      formatter = new libphonenumber.AsYouTypeFormatter(countryCode),
+      // formatter = new libphonenumber.AsYouTypeFormatter(countryCode),
+      formatter = PhoneNumber.getAsYouType(countryCode),
       // if clean is empty, we still need this to be a string otherwise we get errors later
       result = "",
       next,
@@ -1277,7 +1276,7 @@ function formatNumberHelper(val, countryCode, addSuffix, allowExtension, isAllow
 
     for (var i = 0; i < clean.length; i++) {
       // TODO: improve this so don't just pump in every digit every time - we should just cache this formatter object, and just call inputDigit once each time the user enters a new digit
-      next = formatter.inputDigit(clean.charAt(i));
+      next = formatter.addChar(clean.charAt(i));
       // if adding this char didn't change the length, or made it smaller (and there's no longer any spaces): that means that formatting failed which means the number was no longer a potentially valid number, so if we're allowing extensions: assume the rest is the ext
       if (allowExtension && result && next.length <= result.length && next.indexOf(" ") == -1) {
         // set flag for extension
@@ -1294,7 +1293,7 @@ function formatNumberHelper(val, countryCode, addSuffix, allowExtension, isAllow
     // check if there's a suffix to add (unless there's an ext)
     if (addSuffix && !val.split(extSuffix)[1]) {
       // hack to get formatting suffix
-      var test = formatter.inputDigit('5');
+      var test = formatter.addChar('5');
       // again the "+44 " problem... (also affects "+45" apparently)
       if (test.charAt(test.length - 1) == " ") {
         test = test.substr(0, test.length - 1);
@@ -1323,7 +1322,7 @@ function formatNumberHelper(val, countryCode, addSuffix, allowExtension, isAllow
 }
 
 var iso2Countries = {};
-var dialCodes = new Trie();
+var dialCodes = new DigitsTrie();
 
 for (var i = 0; i < allCountries.length; i++) {
   var country = allCountries[i];

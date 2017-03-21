@@ -21,8 +21,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'bower_components/google-libphonenumber/dist/browser/libphonenumber.js',
-      'bower_components/digits-trie/dist/digits-trie.js',
+      'node_modules/awesome-phonenumber/lib/index.js',
+      'node_modules/digits-trie/dist/digits-trie.js',
       'dist/bc-countries.js',
       'test.js'
     ],
